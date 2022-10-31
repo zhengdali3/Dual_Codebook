@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import numpy as np
 
 def count_params(model):
     total_params = sum(p.numel() for p in model.parameters())
@@ -128,3 +128,25 @@ class SOSProvider(AbstractEncoder):
         if self.quantize_interface:
             return c, None, [None, None, c]
         return c
+
+
+class positional_encoding(nn.Module):
+    def __init__(self):
+        self.progress = torch.nn.Parameter(torch.tensor(0.))
+
+    def positional_encoding(self,input,L): # [B,...,N]
+        freq = 2**torch.arange(L,dtype=torch.float32,device="cuda")*np.pi # [L]
+        spectrum = input[...,None]*freq # [B,...,N,L]
+        sin,cos = spectrum.sin(),spectrum.cos() # [B,...,N,L]
+        input_enc = torch.stack([sin,cos],dim=-2) # [B,...,N,2,L]
+        input_enc = input_enc.view(*input.shape[:-1],-1) # [B,...,2NL]
+        start,end = 0, 1
+        alpha = (self.progress.data-start)/(end-start)*L
+        k = torch.arange(L,dtype=torch.float32,device="cuda")
+        weight = (1-(alpha-k).clamp_(min=0,max=1).mul_(np.pi).cos_())/2
+        # apply weights
+        shape = input_enc.shape
+        input_enc = (input_enc.view(-1,L)*weight).view(*shape)
+        if self.progress < end:
+            self.progress = torch.add(self.progress, torch.tensor(1/L))
+        return input_enc

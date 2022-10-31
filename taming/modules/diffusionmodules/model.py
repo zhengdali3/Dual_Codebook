@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+from taming.modules.util import positional_encoding
+
 
 def get_timestep_embedding(timesteps, embedding_dim):
     """
@@ -401,6 +403,8 @@ class Encoder(nn.Module):
                                         kernel_size=3,
                                         stride=1,
                                         padding=1)
+        
+        self.pos_encoding = positional_encoding()
 
 
     def forward(self, x):
@@ -430,6 +434,9 @@ class Encoder(nn.Module):
         h = self.norm_out(h)
         h = nonlinearity(h)
         h = self.conv_out(h)
+
+        #pos encoding
+        h = self.pos_encoding(h, 4)
         return h
 
 
