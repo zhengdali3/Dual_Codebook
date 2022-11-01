@@ -344,7 +344,7 @@ class Model(nn.Module):
 class Encoder(nn.Module):
     def __init__(self, *, ch, out_ch, ch_mult=(1,2,4,8), num_res_blocks,
                  attn_resolutions, dropout=0.0, resamp_with_conv=True, in_channels,
-                 resolution, z_channels, double_z=True, **ignore_kwargs):
+                 resolution, z_channels, L, double_z=True, **ignore_kwargs):
         super().__init__()
         self.ch = ch
         self.temb_ch = 0
@@ -399,7 +399,7 @@ class Encoder(nn.Module):
         # end
         self.norm_out = Normalize(block_in)
         self.conv_out = torch.nn.Conv2d(block_in,
-                                        2*z_channels if double_z else z_channels,
+                                        2*z_channels if double_z else z_channels / L,
                                         kernel_size=3,
                                         stride=1,
                                         padding=1)
@@ -436,7 +436,7 @@ class Encoder(nn.Module):
         h = self.conv_out(h)
 
         #pos encoding
-        h = self.pos_encoding(h, 4)
+        h = self.pos_encoding(h, L)
         return h
 
 

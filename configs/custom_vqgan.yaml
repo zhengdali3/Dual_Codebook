@@ -7,6 +7,7 @@ model:
     ddconfig:
       double_z: False
       z_channels: 256
+      L: 4
       resolution: 256
       in_channels: 3
       out_ch: 3
